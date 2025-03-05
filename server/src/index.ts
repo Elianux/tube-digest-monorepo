@@ -1,5 +1,5 @@
 import "dotenv/config";
-import express, { text } from "express";
+import express from "express";
 import type { Request, Response } from "express";
 import cors from "cors";
 import youtubedl from "youtube-dl-exec";
@@ -30,6 +30,8 @@ interface Result {
 
 interface TranscribeRequestBody {
   url: string;
+  promptStyle?: "technical" | "formal" | "casual" | "bullet-points"; // Optional prompt style
+  summaryLength?: "short" | "medium" | "detailed"; // Optional summary length
 }
 
 // Helper to create a File-like object from Buffer
@@ -60,7 +62,7 @@ async function transcribeAudio(filePath: string): Promise<string> {
 
 // Metadata scraping
 async function getVideoMetadata(url: string): Promise<Metadata> {
-  const response = await axios.get<string>(url); // Use generic type here
+  const response = await axios.get<string>(url);
   const $ = cheerio.load(response.data);
   const title: string = $("title").text().replace(" - YouTube", "").trim();
   const description: string =
@@ -71,25 +73,73 @@ async function getVideoMetadata(url: string): Promise<Metadata> {
 // Summarization with Groq
 async function summarizeContent(
   transcription: string,
-  metadata: Metadata
+  metadata: Metadata,
+  promptStyle: TranscribeRequestBody["promptStyle"] = "formal",
+  summaryLength: TranscribeRequestBody["summaryLength"] = "medium"
 ): Promise<string> {
-  const prompt: string = `
-    Summarize the main points and their comprehensive explanations from below text, presenting them under appropriate headings. Use various Emoji to symbolize different sections, and format the content as a cohesive paragraph under each heading. Ensure the summary is clear, detailed, and informative, reflecting the executive summary style found in news articles. Avoid using phrases that directly reference 'the script provides' to maintain a direct and objective tone.
-    Title: ${metadata.title}
-    Description: ${metadata.description}
-    Transcription: ${transcription}
-  `;
+  // Define max tokens based on summary length
+  const maxTokensMap = {
+    short: 100, // ~50-100 words
+    medium: 250, // ~150-250 words
+    detailed: 500, // ~300-500 words
+  };
+  const maxTokens = maxTokensMap[summaryLength];
+
+  // Define prompt based on style
+  let prompt: string;
+  switch (promptStyle) {
+    case "technical":
+      prompt = `
+        Provide a technical summary of the content below, focusing on key concepts, methodologies, and technical details. Use precise language suitable for an expert audience.
+        Title: ${metadata.title}
+        Description: ${metadata.description}
+        Transcription: ${transcription}
+      `;
+      break;
+    case "formal":
+      prompt = `
+        Summarize the main points and their comprehensive explanations from the content below, presenting them under appropriate headings. Use a formal tone and format the content as cohesive paragraphs under each heading, ensuring clarity and detail in an executive summary style.
+        Title: ${metadata.title}
+        Description: ${metadata.description}
+        Transcription: ${transcription}
+      `;
+      break;
+    case "casual":
+      prompt = `
+        Give a chill, laid-back summary of what's going on in the content below. Keep it simple and conversational, like you're explaining it to a friend over coffee.
+        Title: ${metadata.title}
+        Description: ${metadata.description}
+        Transcription: ${transcription}
+      `;
+      break;
+    case "bullet-points":
+      prompt = `
+        Summarize the content below in bullet points. Keep it concise and highlight the key takeaways clearly. Adjust the number of points based on desired length: 5-7 for short, 10-15 for detailed.
+        Title: ${metadata.title}
+        Description: ${metadata.description}
+        Transcription: ${transcription}
+      `;
+      break;
+    default:
+      prompt = `
+        Summarize the content below in a clear and neutral manner.
+        Title: ${metadata.title}
+        Description: ${metadata.description}
+        Transcription: ${transcription}
+      `;
+  }
+
   const chatCompletion = await groq.chat.completions.create({
     messages: [{ role: "user", content: prompt }],
     model: "mixtral-8x7b-32768",
-    max_completion_tokens: 300,
+    max_completion_tokens: maxTokens,
   });
   return chatCompletion.choices[0]?.message?.content || "No summary generated";
 }
 
 // Controller function
 async function handleTranscribe(req: Request, res: Response): Promise<void> {
-  const { url } = req.body as TranscribeRequestBody;
+  const { url, promptStyle, summaryLength } = req.body as TranscribeRequestBody;
 
   if (!url || !url.includes("youtube.com/watch?v=")) {
     res.status(400).json({ error: "Invalid YouTube URL" });
@@ -100,7 +150,12 @@ async function handleTranscribe(req: Request, res: Response): Promise<void> {
     const audioFile = await extractAudio(url);
     const transcription = await transcribeAudio(audioFile);
     const metadata = await getVideoMetadata(url);
-    const summary = await summarizeContent(transcription, metadata);
+    const summary = await summarizeContent(
+      transcription,
+      metadata,
+      promptStyle,
+      summaryLength
+    );
 
     fs.unlinkSync(audioFile); // Clean up
 
