@@ -14,6 +14,7 @@ export async function summarizeContent(
   promptStyle: "technical" | "formal" | "casual" | "bullet-points",
   summaryLength: "short" | "medium" | "detailed"
 ): Promise<string> {
+  console.log("Starting content summarization...");
   const maxTokensMap = {
     short: 100,
     medium: 250,
@@ -28,11 +29,13 @@ export async function summarizeContent(
     maxTokens
   );
 
+  console.log("Sending prompt to Groq for summarization...");
   const chatCompletion = await groq.chat.completions.create({
     messages: [{ role: "user", content: prompt }],
     model: "mixtral-8x7b-32768",
     max_completion_tokens: maxTokens,
   });
 
+  console.log("Summarization completed.");
   return chatCompletion.choices[0]?.message?.content || "No summary generated";
 }

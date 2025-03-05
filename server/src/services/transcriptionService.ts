@@ -4,6 +4,7 @@ import Groq from "groq-sdk";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
 
 export async function transcribeAudio(filePath: string): Promise<string> {
+  console.log("Starting transcription for audio file:", filePath);
   const audioBuffer: Buffer = fs.readFileSync(filePath);
   const audioFile: File = new File([audioBuffer], "audio.mp3", {
     type: "audio/mp3",
@@ -12,5 +13,6 @@ export async function transcribeAudio(filePath: string): Promise<string> {
     file: audioFile,
     model: "whisper-large-v3",
   });
+  console.log("Transcription completed.");
   return transcription.text;
 }
