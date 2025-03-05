@@ -90,7 +90,7 @@ async function summarizeContent(
   switch (promptStyle) {
     case "technical":
       prompt = `
-        Provide a technical summary of the content below, focusing on key concepts, methodologies, and technical details. Use precise language suitable for an expert audience.
+        Summarize the following YouTube video transcription with a focus on technical accuracy and key concepts. Extract and clarify the main ideas, methodologies, frameworks, formulas, or processes discussed. Maintain precision and avoid unnecessary simplifications while keeping the summary concise and structured. If applicable, include relevant terminology, definitions, or key takeaways. Keep the summary within ${maxTokens} words.
         Title: ${metadata.title}
         Description: ${metadata.description}
         Transcription: ${transcription}
@@ -98,7 +98,7 @@ async function summarizeContent(
       break;
     case "formal":
       prompt = `
-        Summarize the main points and their comprehensive explanations from the content below, presenting them under appropriate headings. Use a formal tone and format the content as cohesive paragraphs under each heading, ensuring clarity and detail in an executive summary style.
+        Summarize the following YouTube video transcription in a professional and structured manner. Highlight the key arguments, main ideas, and conclusions while maintaining clarity and conciseness. Ensure the summary remains objective, avoiding unnecessary details or filler words. Keep the summary within ${maxTokens} words and maintain a formal tone.
         Title: ${metadata.title}
         Description: ${metadata.description}
         Transcription: ${transcription}
@@ -106,7 +106,7 @@ async function summarizeContent(
       break;
     case "casual":
       prompt = `
-        Give a chill, laid-back summary of what's going on in the content below. Keep it simple and conversational, like you're explaining it to a friend over coffee.
+        Give me a quick and easy-to-understand summary of this YouTube video transcription. Keep it conversational and to the point, like you're explaining it to a friend. Focus on the main ideas and takeaways, but feel free to simplify complex points. Try to keep it within ${maxTokens} words.
         Title: ${metadata.title}
         Description: ${metadata.description}
         Transcription: ${transcription}
@@ -114,7 +114,7 @@ async function summarizeContent(
       break;
     case "bullet-points":
       prompt = `
-        Summarize the content below in bullet points. Keep it concise and highlight the key takeaways clearly. Adjust the number of points based on desired length: 5-7 for short, 10-15 for detailed.
+        Summarize this YouTube video transcription using bullet points. Focus on the key ideas, main arguments, and any important conclusions. Keep each point concise and clear, avoiding unnecessary details. The goal is to provide a structured, easy-to-skim summary.
         Title: ${metadata.title}
         Description: ${metadata.description}
         Transcription: ${transcription}
