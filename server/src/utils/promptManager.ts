@@ -1,4 +1,6 @@
-// import { Metadata } from "./index"; // Adjust the import based on your structure
+import Groq from "groq-sdk";
+
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
 
 interface Metadata {
   title: string;
