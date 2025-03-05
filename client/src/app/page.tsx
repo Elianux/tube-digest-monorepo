@@ -11,6 +11,12 @@ interface Result {
 
 export default function Home() {
   const [url, setUrl] = useState("");
+  const [promptStyle, setPromptStyle] = useState<
+    "technical" | "formal" | "casual" | "bullet-points"
+  >("formal");
+  const [summaryLength, setSummaryLength] = useState<
+    "short" | "medium" | "detailed"
+  >("medium");
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,7 +31,7 @@ export default function Home() {
       const response = await fetch("/api/transcribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, promptStyle, summaryLength }),
       });
 
       if (!response.ok) {
@@ -45,15 +51,46 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-gray-100">
       <h1 className="text-3xl font-bold mb-6 text-gray-900">Tube Digest</h1>
-      <form onSubmit={handleSubmit} className="w-full max-w-md">
+      <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
         <input
           type="text"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="Enter YouTube URL"
-          className="w-full p-2 mb-4 border rounded text-black bg-white"
+          className="w-full p-2 border rounded text-black bg-white"
           disabled={loading}
         />
+        <div>
+          <label className="block text-gray-700 mb-1">Summary Style:</label>
+          <select
+            value={promptStyle}
+            onChange={(e) =>
+              setPromptStyle(e.target.value as typeof promptStyle)
+            }
+            className="w-full p-2 border rounded text-black bg-white"
+            disabled={loading}
+          >
+            <option value="technical">Technical</option>
+            <option value="formal">Formal</option>
+            <option value="casual">Casual</option>
+            <option value="bullet-points">Bullet Points</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-gray-700 mb-1">Summary Length:</label>
+          <select
+            value={summaryLength}
+            onChange={(e) =>
+              setSummaryLength(e.target.value as typeof summaryLength)
+            }
+            className="w-full p-2 border rounded text-black bg-white"
+            disabled={loading}
+          >
+            <option value="short">Short (50-100 words)</option>
+            <option value="medium">Medium (150-250 words)</option>
+            <option value="detailed">Detailed (300-500 words)</option>
+          </select>
+        </div>
         <button
           type="submit"
           className="w-full p-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
